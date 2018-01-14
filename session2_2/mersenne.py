@@ -19,10 +19,10 @@ bitmask_3 = (2**31) - 1  # To get last 31 bits
 def initialize_generator(seed):
     "Initialize the generator from a seed"
     # Create a length 624 list to store the state of the generator
-    MT = [0 for i in xrange(624)]
+    MT = [0 for i in range(624)]
     index = 0
     MT[0] = seed
-    for i in xrange(1, 624):
+    for i in range(1, 624):
         MT[i] = ((1812433253 * MT[i - 1]) ^ (
             (MT[i - 1] >> 30) + i)) & bitmask_1
     return (MT, index)
@@ -30,7 +30,7 @@ def initialize_generator(seed):
 
 def generate_numbers(MT):
     "Generate an array of 624 untempered numbers"
-    for i in xrange(624):
+    for i in range(624):
         y = (MT[i] & bitmask_2) + (MT[(i + 1) % 624] & bitmask_3)
         MT[i] = MT[(i + 397) % 624] ^ (y >> 1)
         if y % 2 != 0:
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     from datetime import datetime
     seed = int((datetime.utcnow() - datetime.min).total_seconds())
     (MT, index) = initialize_generator(seed)
-    for i in xrange(100):
+    for i in range(100):
         "Print 100 random numbers as an example"
         (MT, index, y) = extract_number(MT, index)
         print(y)
