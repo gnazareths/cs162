@@ -35,6 +35,7 @@ def generate_numbers(MT):
         MT[i] = MT[(i + 397) % 624] ^ (y >> 1)
         if y % 2 != 0:
             MT[i] ^= 2567483615
+    return MT
 
 
 def extract_number(MT, index):
