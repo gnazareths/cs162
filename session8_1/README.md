@@ -1,78 +1,71 @@
-## SQL indices
+## SQLAlchemy
+SQLAlchemy is a object-relational-mapper (ORM).  This means that it is able
+to map from object-oriented code that you write in Python into SQL commands
+that a database understands.
 
-### Finding a row
-
-```sqlite3
-SELECT * FROM table1 WHERE IDNumber = 87987987;
-```
-If there is no index on IDNumber, then this query will get expanded into
-something like the following pseudocode:
-```python3
-for row in table1:
-    if row.IDNumber == 87987987:
-        print(row)
-```
-If there are roughly *M* rows in table1, then this will require work roughly
-proportional to *O(M)*.  On the other hand if a index is created then it is
-possible to do a tree traversal on the index to find the correct location.
-If the rows are unique, then the tree traversal will be *O(logM)* work.  For
-a large table, this is a huge difference in efficiency.
-
-### Joining a table
-Joins on un-indexed columns are essentially implemented as nested for loops.
-For example, the query:
-```sqlite3
-SELECT * FROM table1 INNER JOIN ON table2 WHERE table1.data1 = table2.data2;
-```
-will get expanded into something like the following pseudocode:
-```python3
-for row1 in table1:
-    for row2 in table2:
-        if row1['data1'] == row2['data2']:
-            print((row1, row2))
-```
-If table1 has *M* rows and table2 has *N* rows, then the database will need to
-do work roughly proportional to *O(MN)*.
+This layer of abstraction can allow an engineer to focus on writing good
+object-oriented code, while SQLAlchemy will then map this into easy access on a
+database.  Having a layer of abstraction allows one to easily change the
+underlying database.  It is common for testing code to use a SQLite database,
+while in production the code instead connects to a beefy server that is
+able to satisfy many simultaneous queries coming from many machines.
 
 ## Questions
 
-### Large un-indexed tables
-In random.sql there is a slow query which joins three un-indexed tables
-together.  Since this is a nested for loop and the tables are roughly the
-same size then it will take *O(N^3)* time.
+### Bank loans
+From the bank loan exercise at the beginning of the unit:
+1. Rewrite all the `CREATE TABLE` commands for the Clients and Loans tables
+to now use SQLAlchemy. The SQLAlchemy commands should also create primary key
+and foreign key constraints where appropriate.
+2. Rewrite all the `INSERT` commands to now use SQLAlchemy. In particular, you
+should hold all the values in a standard Python container (e.g. list,
+dictionary, or namedtuple), or a combination of Python containers (e.g. list of
+dictionaries).  The insertions should all happen in a single transaction.
+3. Rewrite all your `SELECT` queries and `UPDATE` commands to now use
+SQLAlchemy.
+4. Now that you better understand indexing, modify your python code to also
+create indexes on relevant columns so that none of your queries from the
+previous question will do a full table scan.
 
-1. Now figure out how to index the table(s) such that the query is able to run
-much faster.  
-2. Quantify the time taken for each version with the `.timer` command.
-3. Write pseudo code explaining how the fast query is now being implemented.
-4. Give your estimate of the asymptotic scaling behavior in big-Oh notation
-for the fast query.
-5. Give the asymptotic scaling behavior for creating an index.
 
-(Note that SQLite's query planner is smart enough to create temporary indices
-in this case, and it's still faster than the naive scan.  We have to
-explicitly turn off the automatic indexing to better understand what's going
-on.)
+### Online retailer
+From the session on transactions:
+1. Rewrite all the `CREATE TABLE` commands for the tables contained in
+`retail.sql` to now use SQLAlchemy. The SQLAlchemy commands should also create
+primary key and foreign key constraints where appropriate.
+2. Rewrite all the `INSERT` commands to now use SQLAlchemy. In particular, you
+should hold all the values in a standard Python container (e.g. list,
+dictionary, or namedtuple), or a combination of Python containers (e.g. list of
+dictionaries).  The insertions should all happen in a single transaction.
+3. Rewrite all your transactions from the exercise to now use SQLAlchemy.
 
-### Query optimization and indices
+### Abstraction
 
-Some SQL commands can run much faster if the order of constraints is changed.
-For example, consider:
-```sqlite3
-SELECT Name, Phone FROM Customer WHERE Gender = 'f' AND ZipCode = '90210';
-```
-It would be inefficient to efficiently find all female customers, and then
-scan through all zip codes.  Instead it is better to find all customers in the
-given zip code and then select the women.  
+1. SQLite is not designed to be a production database for large webservices.
+Instead a SQL database like MySQL, or PostgreSQL typically get used
+and tend to scale better.  However these are all slightly different SQL
+dialects.  So a query that works on SQLite might not work on MySQL.
+Estimate how much work you will have to do to move all your queries written in
+SQLAlchemy and SQLite to now use MySQL and SQLAlchemy. (Hint: the answer is not
+zero.)
+2. For the previous exercises on loans and retail, get SQLAlchemy to output
+the real SQL commands that it sends to SQLite (this is shown in the recommended
+tutorial on SQLAlchemy).  How do these commands compare with the SQL that you
+wrote manually?  Identify any differences, and find out why SQLAlchemy has done
+it differently.
+3. (Optional) Explain how you would implement unit-tests which connect to SQLite
+but connect to a proper server in production. This is something that I would
+strongly recommend for your group project!
+4. (Optional) Investigate any differences in speed between using SQLAlchemy
+and using SQLite directly.
 
-1. Give pseudo-code for the case that there are no indexes.
-2. Give pseudo-code for the case that there is an index on Gender.  Roughly how
-much more efficient is this than without any indices? (Assuming that your
-customers are evenly split between men and women.)
-3. Give pseudo-code for the case that there is an index on ZipCode.  Assuming
-that there are roughly 10,000 different zip codes for your customers, how
-much more efficient is this than without any indices?
-4. Find out about composite indices.  What would a good composite index look
-like in this case?  Write pseudo-code for this case.
-4. Find out what a covering index is.  What would it look like in this case?
-Is a covering index more or less efficient than a composite index, and why?
+### (Optional) Unit of Work
+SQLAlchemy uses the unit-of-work design pattern to decide when to send updates to the
+database.  Read up on the unit-of-work design pattern, and then look at the
+source code of SQLAlchemy where it implements it:
+
+https://github.com/zzzeek/sqlalchemy/blob/master/lib/sqlalchemy/orm/unitofwork.py
+
+Now write a very high-level python implementation which captures the essential
+idea behind the design, while skipping over much of the complexity in a real
+implementation.

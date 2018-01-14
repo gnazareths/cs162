@@ -1,75 +1,65 @@
-## Unit testing
-Unit testing is a great approach to minimizing bugs in your code.
+## SQL
+For the unit on SQL we will be focusing on SQLite.  This is a small
+relational database which saves all all tables from a single database
+into a single file.
 
-There is an approach called Test Driven Development (TDD) which takes this to
-the extreme.  Here you write tests beforehand which describe the expected
-behavior of your code.
+For the first few sessions, it is recommended that you run sqlite3 directly
+through the sqlite3 shell.  Search the internet for help to you get this up
+and running for your particular platform.
 
+Once you are able to run commands in the shell then you can begin creating
+tables, inserting data and querying the data.  A good approach is to
+create a single long text file containing all the commands.  Depending on the
+platform the following might work for a file called `create.sql`:
+```bash
+$ sqlite3 < create.sql
+```
+This will execute all the commands against an in-memory database.  If you want
+the database to persist then you can tell sqlite to store the database in a file:
+```bash
+$ sqlite3 cs162.db < create.sql
+```
+If your platform does not support piping in the commands then you will have to
+do the following:
+```bash
+$ sqlite3
+SQLite version 3.16.0 2016-11-04 19:09:39
+Enter ".help" for usage hints.
+Connected to a transient in-memory database.
+Use ".open FILENAME" to reopen on a persistent database.
+sqlite> .read create.sql
+```
+
+Remember to comment your SQL commands!  Single line comments use a double
+hyphen (`--`), while multi-line comments use `/* ... */`.
 
 ## Questions
-### The prime bug report
-As the author of a popular library called [`prime.py`](prime.py) you
-occasionally receive bug reports from users who are using your library in their
-application. The latest bug report was filed by someone using [`application.py`](application.py).
+Answer the questions below. Be sure to bring your SQL code to class
+and be ready to share and discuss it.  CoCalc will allow you to upload your
+sql script and run it, so also make sure that it displays the data before
+running any queries on it.
 
-1. Run their code and reproduce the error (it should be a math domain error).
-2. Examine their code and find the bug.  
-3. Now fix your library such that the  application code works correctly (and
-    without any other errors).
-4. Write one (or more) unit tests to ensure that the bugs that you have fixed
-are not reintroduced.
-5. Bring your code to class ready to discuss it.
+### Bankloans
+In the file `bankloans.sql` you will find sqlite commands that create some
+tables and insert some simple data.  We need to query the data, and there are
+some descriptions of the needed queries.  
+1. Make sure that you can execute the sql file.
+2. Now fill in the missing queries!
 
-### More defensive testing
-Another useful tool in TDD is the notion of code coverage.  
+### Ride-sharing
+You are the founder of a ride-sharing startup and need to design the
+initial database.
 
-1. Install coverage with `pip3 install coverage`
-2. Run the coverage tool on [`test.py`](test.py), and generate the html report.
-3. Using the coverage report, write more tests so that you achieve 100% code
-coverage.  Does this find anymore bugs in the library?
-5. Bring your code to class ready to discuss it.  Be sure to remember which
-tests you added from the coverage tool and which tests were introduced from the
-original bug report.
+Your startup will be a platform that connects drivers with people who need a
+lift.  You will need to keep track of:
+- the rides taken,
+- billing for riders,
+- monthly payments for drivers.
 
-### Class project
-For your class project write at least 5 unit tests which test the functionality
-that you expect to have in any part of the system.  Since these tests will help
-you ensure a working project it is in your own interests not to duplicate tests
-already written by other students.  So you are encouraged here to collaborate
-and maximize your expected coverage. (In some situations there might be limited
-scope for unit tests, so there is no penalty for writing duplicate tests.)
-
-Notice that you don't need to have written any functionality for the class
-project, in order to start writing the unit tests.  Remember to run the tests
-when you do start implementing the functionality.  Seeing a gradual increase in
-the number of tests passing can be very motivating!
-
-Bring your unit tests to class and be ready to discuss them.
-
-### (Optional) Optimization of prime library
-
-In the library there have been several attempts at optimization.  For example
-the get_next_prime function tests whether the initial x is even and increments
-x if it is.  This allows us to only test the odd numbers (we know that an even
-number is not prime).
-
-Time the code with and without the optimizations.  Which optimizations give
-noticeable speed improvements?  Rewrite `prime.py` using only optimizations that
-work. Keep the new code as simple as possible.   Which code would you rather
-maintain?
-
-### (Optional) Probabilistic prime tests
-
-In practice the deterministic tests for prime number are too slow.  So as good
-engineers, we have decided to trade correctness for speed.  In the new library
-we will implement a probabilistic test for primality.  
-
-- Find code online for performing a single probabilistic prime test.
-- Decide on a probability of error that you feel comfortable with.
-- Now implement the new library such that you can produce primes with a
-probability of error not less than your acceptable level.
-- What sort of speed is your new library?  How does this compare with the old
-library?  Which would you prefer to use for a *really* important cryptographic
-purpose?
-- How do you test a library that is probabilistic in nature?
-- Come and discuss your results with me during office hours!
+1. Design all the SQL tables you need to capture the above requirements.
+2. Write the `CREATE TABLE` statements to implement your design.
+3. `INSERT` some example data that you have made up.
+4. Write a query to find out how many trips have been made by each driver this
+month, and how much they will be paid.
+5. Write a query to find all the riders who haven't taken any trips this
+month. (So we can send them an irritating marketing email!)
