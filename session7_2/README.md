@@ -1,118 +1,78 @@
-## ACID and transactions
+## SQL indices
 
-As a database grows in complexity there tends to emerge natural constraints as
-part of the data modeling process. Fortunately SQL provide ACID guarantees,
-which can prevent any inconsistencies violating those constraints.  
+### Finding a row
 
-An example
-might be a book exchange database.  Every time two people swap a book then
-there are two updates that need to happen. One new entry in the database
-showing that book A was given to person 1 from person 2, and another entry
-showing that book B was given to person 2 from person 1.  If these two updates
-are interrupted halfway through then it will look like book A was given with
-nothing given in return.  This would defeat the whole point of a book exchange.
-The problem only gets more acute when dealing with money (the books don't
-balance).
+```sqlite3
+SELECT * FROM table1 WHERE IDNumber = 87987987;
+```
+If there is no index on IDNumber, then this query will get expanded into
+something like the following pseudocode:
+```python3
+for row in table1:
+    if row.IDNumber == 87987987:
+        print(row)
+```
+If there are roughly *M* rows in table1, then this will require work roughly
+proportional to *O(M)*.  On the other hand if a index is created then it is
+possible to do a tree traversal on the index to find the correct location.
+If the rows are unique, then the tree traversal will be *O(logM)* work.  For
+a large table, this is a huge difference in efficiency.
 
-It is far better to make the updates all-or-nothing (atomic).  This means that
-the database is always in a consistent state.  Today's exercises focus on sets
-of instructions that must all succeed, or all fail to ensure that the database
-is left in a consistent state.
+### Joining a table
+Joins on un-indexed columns are essentially implemented as nested for loops.
+For example, the query:
+```sqlite3
+SELECT * FROM table1 INNER JOIN ON table2 WHERE table1.data1 = table2.data2;
+```
+will get expanded into something like the following pseudocode:
+```python3
+for row1 in table1:
+    for row2 in table2:
+        if row1['data1'] == row2['data2']:
+            print((row1, row2))
+```
+If table1 has *M* rows and table2 has *N* rows, then the database will need to
+do work roughly proportional to *O(MN)*.
 
 ## Questions
 
-### Write-ahead logging
-Read up on [write-ahead logging](https://www.sqlite.org/wal.html). Using the
-ideas contained there, write out a small example showing several updates being
-made to a database using a write-ahead log.  Show that if the update is
-interrupted at any point then the database will be able to revert to a
-consistent state.
+### Large un-indexed tables
+In random.sql there is a slow query which joins three un-indexed tables
+together.  Since this is a nested for loop and the tables are roughly the
+same size then it will take *O(N^3)* time.
 
-This question does not require any code, but it does require a clear, detailed,
-step-by-step description of the process.  
+1. Now figure out how to index the table(s) such that the query is able to run
+much faster.  
+2. Quantify the time taken for each version with the `.timer` command.
+3. Write pseudo code explaining how the fast query is now being implemented.
+4. Give your estimate of the asymptotic scaling behavior in big-Oh notation
+for the fast query.
+5. Give the asymptotic scaling behavior for creating an index.
 
-### Online retailer
-In `retail.sql` is a possible database design for a large online retail company.
-This company has several warehouses, and each warehouse is filled with
-several thousand products.  Each product can come from one or more
-suppliers, but will only ever be stored in a single warehouse.
-Each warehouse has a single delivery company which handles all the
-logistics of delivering to a customer.  Fortunately for us, each
-customer only has a single address.
+(Note that SQLite's query planner is smart enough to create temporary indices
+in this case, and it's still faster than the naive scan.  We have to
+explicitly turn off the automatic indexing to better understand what's going
+on.)
 
-The retailer receives orders.  Each order consists of one or more
-items to be purchased.  If the item is not available, then it will be
-automatically ordered from the cheapest supplier.  
+### Query optimization and indices
 
-Here is an example transaction for all the needed updates when Gertrud orders
-a single widget from us, and we still have sufficient stock in the ABC warehouse:
-```SQLite
-BEGIN TRANSACTION;
-INSERT INTO Orders VALUES (1001, 2000, "2025-01-01 10:00:00", 202501);
-INSERT INTO OrderItems VALUES (1001, 3001, 1);
-UPDATE Inventory SET Quantity = Quantity - 1 WHERE WarehouseID=4001 AND ProductID=3001;
-SELECT Quantity FROM Inventory WHERE WarehouseID=4001 AND ProductID=3001;
-END TRANSACTION;
+Some SQL commands can run much faster if the order of constraints is changed.
+For example, consider:
+```sqlite3
+SELECT Name, Phone FROM Customer WHERE Gender = 'f' AND ZipCode = '90210';
 ```
-Notice that at the end we do a select to double check that we still have
-sufficient stock in the warehouse.  (If there were a negative amount, then we
-might have to rollback the transaction and order from the suppliers instead.)
+It would be inefficient to efficiently find all female customers, and then
+scan through all zip codes.  Instead it is better to find all customers in the
+given zip code and then select the women.  
 
-Now answer the following:
-1. Add all the primary key and foreign key constraints. (This will probably
-require you to also reorder some of the table declarations.)
-1. Write a transaction for a delivery from the Widge supplier which has just
-arrived at the ABC warehouse and unloaded 99 new Widgets.
-2. Write a transaction for a Customer order of 500 Wodgets which places an order
-with the cheapest supplier.  (Be sure to find the cheapest supplier
-automatically, rather than hardcoding your answer.)
-3. What statements would be needed to update a customer's details to their new
-address, while still maintaining referential integrity?
-4. What steps would we need to take to delete a product from the Product table,
-while still maintaining referential integrity?  Put all of these statements
-together into a transaction.  What collateral damage would be done if a product
-was deleted?  (In practice, a product will almost never get deleted unless it
-has never been referenced in any other table.)
-5. Critique the database design.  What data should be in the database schema,
-but isn't?
-
-
-### Stock trading data
-Your company has subscribed to a share trading data feed from the NYSE.  This
-data feed lists all the orders placed and all the sales that occur.  
-Some orders get cancelled before they can be filled.  
-
-Each order is either to buy or sell a certain number of shares in a particular
-company.  The order lists which trading desk placed the order, and if the order is
-filled then the trading desk that filled the order is also listed.
-
-At the beginning of the year, your company also received a snapshot of which
-trading desks owned which stocks for all the companies listed on the NYSE.
-By using the snapshot as a starting point, one can use the successful trades
-to update your estimate of all the trading desk portfolios.
-
-As an example, if you knew that the Delta Trading desk had 100 shares of XOM,
-and the feed showed another purchase of 100 shares then you knew that Delta
-Trading now had 200 shares.
-
-As part of its corporate strategy, your company monitors everyone's portfolios
-on a daily basis.  It also monitors the number of sell orders and the number
-of buy orders placed by a trading desk every day for every company on the NYSE.
-
-All the orders also get rolled into summary tables for each company.  These
-summary tabes list the total number of orders placed, the total number of
-orders filled, the total number of shares exchanged, the total number of
-dollars exchanged, the minimum price, and the maximum price. This summary
-is generated on a daily basis for every company.
-
-1. Design all the SQL tables you need to capture the above requirements.
-2. Write the `CREATE TABLE` statements to implement your design.
-3. `INSERT` some example data that you have made up.
-4. Now write a transaction that updates the portfolios for both the selling
-company and the buying company.  This must also then update the summary tables.
-5. What would happen if the statements were not wrapped in a transaction, and
-everything went smoothly?  What would happen if the set of updates were
-interrupted halfway through?
-
-(This is not intending to be a very realistic question, but more a question
-around data modeling, and transactions!)
+1. Give pseudo-code for the case that there are no indexes.
+2. Give pseudo-code for the case that there is an index on Gender.  Roughly how
+much more efficient is this than without any indices? (Assuming that your
+customers are evenly split between men and women.)
+3. Give pseudo-code for the case that there is an index on ZipCode.  Assuming
+that there are roughly 10,000 different zip codes for your customers, how
+much more efficient is this than without any indices?
+4. Find out about composite indices.  What would a good composite index look
+like in this case?  Write pseudo-code for this case.
+4. Find out what a covering index is.  What would it look like in this case?
+Is a covering index more or less efficient than a composite index, and why?

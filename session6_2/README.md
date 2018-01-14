@@ -1,65 +1,66 @@
-## SQL
-For the unit on SQL we will be focusing on SQLite.  This is a small
-relational database which saves all all tables from a single database
-into a single file.
-
-For the first few sessions, it is recommended that you run sqlite3 directly
-through the sqlite3 shell.  Search the internet for help to you get this up
-and running for your particular platform.
-
-Once you are able to run commands in the shell then you can begin creating
-tables, inserting data and querying the data.  A good approach is to
-create a single long text file containing all the commands.  Depending on the
-platform the following might work for a file called `create.sql`:
-```bash
-$ sqlite3 < create.sql
-```
-This will execute all the commands against an in-memory database.  If you want
-the database to persist then you can tell sqlite to store the database in a file:
-```bash
-$ sqlite3 cs162.db < create.sql
-```
-If your platform does not support piping in the commands then you will have to
-do the following:
-```bash
-$ sqlite3
-SQLite version 3.16.0 2016-11-04 19:09:39
-Enter ".help" for usage hints.
-Connected to a transient in-memory database.
-Use ".open FILENAME" to reopen on a persistent database.
-sqlite> .read create.sql
-```
-
-Remember to comment your SQL commands!  Single line comments use a double
-hyphen (`--`), while multi-line comments use `/* ... */`.
+## Data Normalization
+Data normalization refers to the degree to which potentially-shared
+information is moved into separate tables.
 
 ## Questions
-Answer the questions below. Be sure to bring your SQL code to class
-and be ready to share and discuss it.  CoCalc will allow you to upload your
-sql script and run it, so also make sure that it displays the data before
-running any queries on it.
 
-### Bankloans
-In the file `bankloans.sql` you will find sqlite commands that create some
-tables and insert some simple data.  We need to query the data, and there are
-some descriptions of the needed queries.  
-1. Make sure that you can execute the sql file.
-2. Now fill in the missing queries!
+### Definitions of normalization
+Search the internet and find good definitions and examples of the following:
+- First normal form
+- Second normal form
+- Third normal form
+- Denormalization
+- Composite key
 
-### Ride-sharing
-You are the founder of a ride-sharing startup and need to design the
-initial database.
+### Road racing association
+##### Description
+You are contracted out to set up a database for an association of road-runners.
+They organize many different races through-out the year. Some of the races get
+put into different challenges.  So for example, there could be the following
+races:
+- The ruby marathon
+- The bridge challenge
+- The sea to mountain sprint
+- Flat and fast marathon
+- The wine route stroll
 
-Your startup will be a platform that connects drivers with people who need a
-lift.  You will need to keep track of:
-- the rides taken,
-- billing for riders,
-- monthly payments for drivers.
+And there could be two challenges:
+- **The marathon challenge:**
+    - the ruby marathon;
+    - the flat and fast marathon.
+- **The terrain challenge:**
+    - the bridge challenge;
+    - the sea to mountain;
+    - the ruby marathon.
 
+Notice that not all races belong to a challenge, and some races belong to more
+than one challenge.  These challenges repeat every year, but
+with subtle differences sometimes (e.g. a new race might be included,
+or a particular race is unable to be run that year).
+
+The association needs to be able to keep track of which runners entered
+which races, and what their running times were.  A few weeks after the
+final race in a particular challenge has been run, the results will get
+emailed or posted out.
+
+##### Original Design
 1. Design all the SQL tables you need to capture the above requirements.
 2. Write the `CREATE TABLE` statements to implement your design.
 3. `INSERT` some example data that you have made up.
-4. Write a query to find out how many trips have been made by each driver this
-month, and how much they will be paid.
-5. Write a query to find all the riders who haven't taken any trips this
-month. (So we can send them an irritating marketing email!)
+4. Write a SQL query to find the top 3 fastest women runners for a given race.
+5. Write a SQL query to find all the runners' email addresses that
+successfully finished the marathon challenge.
+
+##### Alternate Design
+Make a copy of your original design and make the following changes
+1. Introduce a change in your schema that violates third normal form. Be able to
+explain what third normal form is and why your change violates it.
+2. Introduce another change, but this time violate second normal form.
+Be able to  explain what second normal form is and why your change violates it.
+3. Carry out another change, but this time violate the first normal form.
+Be able to explain what first normal form is and why your change violates it.
+4. Change your database schema, by denormalizing two tables that will be
+frequently joined.  Will it ever make sense to denormalize your data, and why?
+
+**Bring your design and your alternate design(s) to class and be prepared to
+explain them**

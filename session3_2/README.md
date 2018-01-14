@@ -1,14 +1,4 @@
 ## Polymorphism
-<!-- e.g. The verb "charge" could apply to:
- - horsemen charging an enemy
- - policemen charging a criminal
- - batteries charging
- - a credit card being charged
-
-In different settings, the verb will accomplish different things.
-
-
-Work through the readings and -->
 
 
 ## Questions:
